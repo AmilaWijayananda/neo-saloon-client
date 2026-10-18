@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import * as jose from "jose";
 import { RequestUserType } from "@/types/requestUser";
 
+
 export async function getUser(request : NextRequest) : Promise<RequestUserType | null>{
 
     const loginToken = request.cookies.get("login-token")?.value
