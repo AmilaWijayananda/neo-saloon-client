@@ -7,6 +7,8 @@ export async function GET(request : NextRequest){
 
     const havePrivilege = await isPrivileged(request, "users:read")
 
+
+
     if(!havePrivilege){
         return NextResponse.json(
             {
@@ -17,8 +19,34 @@ export async function GET(request : NextRequest){
             }
         )
     }
+
+    const pageNumberInString = request.nextUrl.searchParams.get("pageNumber")||"1"
+
+    const pageSizeInString = request.nextUrl.searchParams.get("pageSize")||"10"
+
+    const pageNumber = parseInt(pageNumberInString)
+    const pageSize = parseInt(pageSizeInString) //50
+
+    const userCount = await prisma.user.count() //999 
+    
+    const totalPages = Math.ceil( userCount / pageSize )
+
+    if(pageNumber > totalPages){
+        return NextResponse.json(
+            {
+                message : "Page number exceeds total pages",
+                totalPages : totalPages
+            },
+            {
+                status : 400
+            }
+        )
+    }
+
     const users = await prisma.user.findMany({
-        select: {
+        skip : (pageNumber - 1) * pageSize,
+        take : pageSize,
+        select : {
             id :true,
             email :true,
             phone :true,
@@ -36,7 +64,13 @@ export async function GET(request : NextRequest){
     return NextResponse.json(
         {
             message : "Users fetched successfully",
-            users : users
+            users : users,
+            pagination : {
+                pageNumber : pageNumber,
+                pageSize : pageSize,
+                totalPages : totalPages,
+                totalCount : userCount
+            }
         }
     )
 }
